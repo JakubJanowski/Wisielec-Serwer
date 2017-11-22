@@ -5,13 +5,13 @@ import java.net.Socket;
 import java.net.SocketException;
 import shared.*;
 
-public class clientThread extends Thread {
+public class ClientThread extends Thread {
     private Socket clientSocket;
     private byte clientIndex;
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
 
-    clientThread(Socket clientSocket, byte clientIndex) {
+    ClientThread(Socket clientSocket, byte clientIndex) {
         this.clientSocket = clientSocket;
         this.clientIndex = clientIndex;
         try {
@@ -45,22 +45,25 @@ public class clientThread extends Thread {
         while (!interrupted()) {
             sendMessage(new Message(MessageType.Connect, "Elo 3 2 0\n"));
             message = readMessage();
-            if (message == null) {    // client quit?
-                //clientSocket.close();
-                return;
-            }
             switch (message.type) {
                 case Disconnect:   // client wants to disconnect
                     System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " closed connection.");
+                    Server.disconnectClient(clientIndex);
                     return;
+                case ConnectionError:
+                    System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");
+                    Server.disconnectClient(clientIndex);
+                    return;
+                case Unknown:
+                    System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  uses different application version and communication won't be possible.");
                 default:
-                    System.out.println("Unknown message type received from client.");
+                    System.out.println("Unknown message type received from client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
             }
             System.out.println("Message from client: " + message.type + ": " + message.data);
         }
     }
 
-    private void sendMessage(Message message) {
+    void sendMessage(Message message) {
         try {
             objectOutputStream.writeObject(message);
         } catch (IOException e) {
@@ -82,13 +85,13 @@ public class clientThread extends Thread {
                 default:
                     e.printStackTrace();
             }
-            Server.disconnectClient(clientIndex);
+            return new Message(MessageType.ConnectionError);
         } catch (IOException e) {
-            e.printStackTrace();
-            Server.disconnectClient(clientIndex);
-        } catch (ClassNotFoundException e) {    // add unknown messagetype
-            e.printStackTrace();
+            //e.printStackTrace();
+            return new Message(MessageType.ConnectionError);
+        } catch (ClassNotFoundException e) {
+            //e.printStackTrace();
+            return new Message(MessageType.Unknown);
         }
-        return null;
     }
 }

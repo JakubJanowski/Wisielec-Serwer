@@ -27,7 +27,7 @@ public class Client {
             objectOutputStream = new ObjectOutputStream(serverSocket.getOutputStream());
             System.out.println(" OK");
             System.out.print("\tCreating input stream...");
-            objectInputStream = new ObjectInputStream(serverSocket.getInputStream());
+            objectInputStream = new ObjectInputStream(serverSocket.getInputStream());   // will hang there if server doesn't accept connection
             System.out.println(" OK");
         } catch (ConnectException e) {
             switch (e.getMessage()) {
@@ -87,6 +87,8 @@ public class Client {
             if (message == null)    // client should quit
                 return;
             switch (message.type) {
+                case Connect:  // won't happen in target app
+                    break;
                 case Disconnect:   // server wants to disconnect
                     exit = true;
                     System.out.println("Server closed connection. Closing client.");

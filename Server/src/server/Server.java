@@ -1,9 +1,11 @@
 package server;
 
+import shared.Message;
+import shared.MessageType;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class Server {
     private static final short PORT = 6969;
@@ -12,7 +14,7 @@ public class Server {
     private static byte nConnectedClients = 0;
     private static final Object LOCK = new Object();
     private static ServerSocket serverSocket;
-    private static final Thread[] clientThreads = new Thread[MAX_CLIENTS];
+    private static final ClientThread[] clientThreads = new ClientThread[MAX_CLIENTS];
     private static Thread listenerThread = null;
 
     public static void main(String[] args) {
@@ -38,6 +40,9 @@ public class Server {
                             System.out.println("Terminating server.");
                             closeServer();
                             return;
+                        case "list":
+                            listClients();
+                            break;
                         default:
                             System.out.println("Unknown command.");
                     }
@@ -51,43 +56,6 @@ public class Server {
                 e.printStackTrace();
             }
         } while (true);
-    }
-
-    private static void closeServer() {
-        listenerThread.interrupt();
-        try {
-            new Socket("127.0.0.1", PORT);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        for (byte i = 0; i < MAX_CLIENTS; i++) {
-            if (clientThreads[i] != null)
-                clientThreads[i].interrupt();
-            if (clientSockets[i] != null) {
-                try {
-                    BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(clientSockets[i].getOutputStream()));
-                    bufferedWriter.write("close\n");
-                    bufferedWriter.flush();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                //disconnectClient(i);
-            }
-        }
-    }
-
-    static void disconnectClient(byte clientIndex) {
-        synchronized (LOCK) {
-            if (clientSockets[clientIndex] != null) {
-                try {
-                    clientSockets[clientIndex].close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (nConnectedClients > 0)
-                nConnectedClients--;
-        }
     }
 
     private static void listenClients() {
@@ -105,11 +73,63 @@ public class Server {
                     nConnectedClients++;
                 }
                 System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " joined.");
-                clientThreads[clientIndex] = new clientThread(clientSocket, clientIndex);
+                clientThreads[clientIndex] = new ClientThread(clientSocket, clientIndex);
                 clientThreads[clientIndex].start();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
+
+    private static void listClients() {
+        boolean isAnyoneConnected = false;
+        for(int i = 0; i < MAX_CLIENTS; i++) {
+            if(clientSockets[i] != null) {
+                isAnyoneConnected = true;
+                String status = "";
+                if (clientSockets[i].isConnected() && clientSockets[i].isClosed())
+                    status = "connected, closed";
+                else if (clientSockets[i].isConnected())
+                    status = "connected";
+                else if (clientSockets[i].isClosed())
+                    status = "closed";
+                System.out.println(clientSockets[i].getInetAddress() + ":" + clientSockets[i].getPort() + " status: " + status);
+            }
+        }
+        if(!isAnyoneConnected)
+            System.out.println("No clients connected.");
+    }
+
+    private static void closeServer() {
+        listenerThread.interrupt();
+        try {
+            new Socket("127.0.0.1", PORT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        for (byte i = 0; i < MAX_CLIENTS; i++) {
+            if (clientThreads[i] != null) {
+                clientThreads[i].sendMessage(new Message(MessageType.Disconnect));
+                clientThreads[i].interrupt();
+            }
+        }
+    }
+
+    static void disconnectClient(byte clientIndex) {
+        synchronized (LOCK) {
+            if (clientSockets[clientIndex] != null) {
+                try {
+                    System.out.print("Closing connection with client " + clientSockets[clientIndex].getInetAddress() + ":" + clientSockets[clientIndex].getPort() + "...");
+                    clientSockets[clientIndex].close();
+                    System.out.println(" OK");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                clientSockets[clientIndex] = null;
+            }
+            if (nConnectedClients > 0)
+                nConnectedClients--;
+        }
+    }
+
 }

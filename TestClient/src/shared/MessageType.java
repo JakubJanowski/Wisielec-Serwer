@@ -2,5 +2,7 @@ package shared;
 
 public enum MessageType {
     Connect,
-    Disconnect
+    ConnectionError,
+    Disconnect,
+    Unknown,
 }
