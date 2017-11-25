@@ -117,6 +117,12 @@ public class Server {
 
     static void disconnectClient(byte clientIndex) {
         synchronized (LOCK) {
+            if (clientThreads[clientIndex] != null) {
+                if(!clientThreads[clientIndex].isInterrupted()) {
+                    clientThreads[clientIndex].interrupt();
+                }
+                clientThreads[clientIndex] = null;
+            }
             if (clientSockets[clientIndex] != null) {
                 try {
                     System.out.print("Closing connection with client " + clientSockets[clientIndex].getInetAddress() + ":" + clientSockets[clientIndex].getPort() + "...");
