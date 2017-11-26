@@ -20,11 +20,8 @@ public class Server {
     private static Thread listenerThread = null;
 
     //
-    public static GameState.Player players[];
-    public static Dictionary<Character, Boolean> keyboard;
+    public static GameState gameState;
     public static String word;
-    public static GameState.Phase phase;
-    public static int hangmanHealth;
 
 
 
