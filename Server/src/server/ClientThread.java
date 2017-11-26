@@ -50,6 +50,10 @@ public class ClientThread extends Thread {
                     System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " closed connection.");
                     Server.disconnectClient(clientIndex);
                     return;
+                case GameState:
+
+
+                    return;
                 case ConnectionError:
                     System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");
                     Server.disconnectClient(clientIndex);
