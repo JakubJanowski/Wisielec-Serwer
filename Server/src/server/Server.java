@@ -22,6 +22,7 @@ public class Server {
     //
     public static GameState gameState;
     public static String word;
+    public static int dealer;
 
 
 
@@ -89,6 +90,7 @@ public class Server {
         }
         gameState.hangmanHealth = 7;
         gameState.phase = GameState.Phase.ChoosingWord;
+        dealer = 0;
     }
 
     private static void listClients() {
