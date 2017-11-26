@@ -156,6 +156,12 @@ public class Server {
             }
         }
     }
-
+    public static int getNextPlayerId(int id){
+        id ++;
+        id %= MAX_CLIENTS;
+        if(id == dealer)
+            return getNextPlayerId(id);
+        return id;
+    }
 
 }

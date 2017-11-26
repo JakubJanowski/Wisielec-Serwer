@@ -3,7 +3,6 @@ package server;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.Objects;
 
 import shared.*;
 
@@ -13,7 +12,7 @@ public class ClientThread extends Thread {
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
 
-    private int my_numer;
+    private int my_number;
     private String mylogin;
     private char recived_myletter;
 
@@ -60,7 +59,7 @@ public class ClientThread extends Thread {
                 case PickLetter:
                     recived_myletter=(char)message.data;
 
-                    if(Server.gameState.players[my_numer].hasTurn)
+                    if(Server.gameState.players[my_number].hasTurn)
                     {
                         System.out.println("Client "+mylogin+ " guessed letter '"+ recived_myletter+"' with success");
                         System.out.println("Client "+mylogin+ " guessed letter '"+ recived_myletter+"' with failure");
@@ -71,6 +70,22 @@ public class ClientThread extends Thread {
 
 
                     return;
+                case PickWord:
+                    if(Server.dealer == my_number && Server.gameState.players[my_number].hasTurn && Server.gameState.phase == GameState.Phase.ChoosingWord ){
+                        String word = ((String)message.data).toUpperCase();
+                        System.out.println("Client "+mylogin+ " picked word \""+ word +"\" with success");
+                        Server.word = word;
+                        Server.gameState.phase = GameState.Phase.Guess;
+                        Server.gameState.players[my_number].hasTurn = false;
+                        Server.gameState.players[Server.getNextPlayerId(my_number)].hasTurn = true;
+                        Server.gameState.word = "";
+                        for(int i = 0; i < Server.word.length(); i++){
+                            Server.gameState.word += "_";
+                        }
+                        Server.updateGameState();
+                    }
+                    else
+                        System.out.println("Client "+mylogin+ "send message with word not in his turn, his messsage is ignored");
                 case ConnectionError:
                     System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");
                     Server.disconnectClient(clientIndex);
