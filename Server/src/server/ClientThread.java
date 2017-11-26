@@ -58,7 +58,7 @@ public class ClientThread extends Thread {
                     return;
                 case PickLetter:
                     recived_myletter=(char)message.data;
-                    if(Server.gameState.players[my_number].hasTurn)
+                    if(Server.gameState.players[my_number].hasTurn && Server.gameState.phase==GameState.Phase.Guess)
                     {
                         if(Server.word.contains(Character.toString(recived_myletter))) {
                             System.out.println("Client " + mylogin + " guessed letter '" + recived_myletter + "' with success");
@@ -74,15 +74,21 @@ public class ClientThread extends Thread {
                             Server.gameState.keyboard.put(recived_myletter, true);//
                             if(Server.word.contains("_"))//sprawdz czy koniec
                             {
-                                //TODO pozostaw ture na mnie i wyslij do wszystkich nowy stan gry}
+                                Server.gameState.players[my_number].hasTurn=true;
+                                Server.updateGameState();
                             }
                             else//haslo cale zostalo zgadniete
                             {
                                 Server.gameState.players[my_number].points+=1;
                                 Server.gameState.phase=GameState.Phase.ChoosingWord;
-                                //TODO przesun token
-                                //TODO pozostaw ture na diler+1 i wyslij do wszystkich nowy stan gry}
-
+                                Server.gameState.players[my_number].hasTurn=false;
+                                Server.gameState.players[Server.dealer].hasTurn=true;
+                                Server.setNextDeler();
+                                if(Server.counter==Server.NUMBER_OF_TURN)//koniec calej rozgrywki
+                                {
+                                    Server.gameState.phase=GameState.Phase.EndGame;
+                                }
+                                 Server.updateGameState();
                             }
 
                         }
@@ -91,18 +97,25 @@ public class ClientThread extends Thread {
                             Server.gameState.hangmanHealth-=1;
                             if(Server.gameState.hangmanHealth==0)
                             {
-                                //TODO diler dostaje punkt
-                                //TODO przesun token
-                                //TODO pozostaw ture na diler+1
+                                Server.gameState.players[Server.dealer].points+=1;
+                                Server.setNextDeler();
+                                Server.gameState.players[my_number].hasTurn=false;
+                                Server.gameState.players[Server.dealer].hasTurn=true;
                                 Server.gameState.phase=GameState.Phase.ChoosingWord;
-                                //TODO wyslij do wszystkich nowy stan gry
+                                if(Server.counter==Server.NUMBER_OF_TURN)//calkowity koniec rozgrywki
+                                {
+                                    Server.gameState.phase=GameState.Phase.EndGame;
+                                }
+                                Server.updateGameState();
                             }
                             else {
-                                //TODO przestaw ture na nastepnego gracza i wyslij do wszystkich nowy stan gry
+                                Server.gameState.players[Server.getNextPlayerId(my_number)].hasTurn = true;
+                                Server.gameState.players[my_number].hasTurn = false;
+                                Server.updateGameState();
                             }
                     }
                     else
-                        System.out.println("Client "+mylogin+ "send message with letter not in his turn, his messsage is ignored");
+                        System.out.println("Client "+mylogin+ " has send message with letter not in his turn, his messsage is ignored");
 
 
                     return;
