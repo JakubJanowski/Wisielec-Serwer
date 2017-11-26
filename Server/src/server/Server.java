@@ -87,6 +87,8 @@ public class Server {
                 e.printStackTrace();
             }
         }
+        gameState.hangmanHealth = 7;
+        gameState.phase = GameState.Phase.ChoosingWord;
     }
 
     private static void listClients() {
@@ -145,5 +147,13 @@ public class Server {
                 nConnectedClients--;
         }
     }
+    public static void updateGameState(){
+        for (byte i = 0; i < MAX_CLIENTS; i++) {
+            if (clientThreads[i] != null) {
+                clientThreads[i].sendMessage(new Message(MessageType.GameState, gameState));
+            }
+        }
+    }
+
 
 }
