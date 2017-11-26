@@ -3,6 +3,8 @@ package server;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Objects;
+
 import shared.*;
 
 public class ClientThread extends Thread {
@@ -10,6 +12,11 @@ public class ClientThread extends Thread {
     private byte clientIndex;
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
+
+    private int my_numer;
+    private String mylogin;
+    private char recived_myletter;
+
 
     ClientThread(Socket clientSocket, byte clientIndex) {
         this.clientSocket = clientSocket;
@@ -49,6 +56,20 @@ public class ClientThread extends Thread {
                 case Disconnect:   // client wants to disconnect
                     System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " closed connection.");
                     Server.disconnectClient(clientIndex);
+                    return;
+                case PickLetter:
+                    recived_myletter=(char)message.data;
+
+                    if(Server.gameState.players[my_numer].hasTurn)
+                    {
+                        System.out.println("Client "+mylogin+ " guessed letter '"+ recived_myletter+"' with success");
+                        System.out.println("Client "+mylogin+ " guessed letter '"+ recived_myletter+"' with failure");
+
+                    }
+                    else
+                        System.out.println("Client "+mylogin+ "send message with letter not in his turn, his messsage is ignored");
+
+
                     return;
                 case ConnectionError:
                     System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");

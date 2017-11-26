@@ -6,5 +6,6 @@ public enum MessageType {
     Disconnect,
     GameState,
     PickWord,
+    PickLetter,
     Unknown,
 }
