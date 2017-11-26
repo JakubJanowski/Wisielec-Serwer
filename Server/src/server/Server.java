@@ -1,11 +1,13 @@
 package server;
 
+import shared.GameState;
 import shared.Message;
 import shared.MessageType;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Dictionary;
 
 public class Server {
     private static final short PORT = 6969;
@@ -16,6 +18,15 @@ public class Server {
     private static ServerSocket serverSocket;
     private static final ClientThread[] clientThreads = new ClientThread[MAX_CLIENTS];
     private static Thread listenerThread = null;
+
+    //
+    public static GameState.Player players[];
+    public static Dictionary<Character, Boolean> keyboard;
+    public static String word;
+    public static GameState.Phase phase;
+    public static int hangmanHealth;
+
+
 
     public static void main(String[] args) {
         try {
