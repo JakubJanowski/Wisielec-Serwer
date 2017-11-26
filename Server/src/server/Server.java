@@ -23,6 +23,8 @@ public class Server {
     public static GameState gameState;
     public static String word;
     public static int dealer;
+    public static  int counter=0;
+    public static  final int NUMBER_OF_TURN=8;
 
 
 
@@ -162,6 +164,13 @@ public class Server {
         if(id == dealer)
             return getNextPlayerId(id);
         return id;
+    }
+
+    public static void  setNextDeler(){
+        counter++;
+        dealer++;
+        dealer %= MAX_CLIENTS;
+        
     }
 
 }
