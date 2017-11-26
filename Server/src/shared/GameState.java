@@ -3,12 +3,14 @@ package shared;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
+
+
 public class GameState {
     public class Player {
-        int points;
-        String login;
-        boolean isConnected;
-        boolean hasTurn;
+        public int points;
+        public String login;
+        public boolean isConnected;
+        public boolean hasTurn;
     }
 
     public enum Phase {
