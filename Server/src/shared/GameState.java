@@ -27,6 +27,7 @@ public class GameState {
 
     public GameState() {
         players = new Player[4];
+        hangmanHealth=7;
         keyboard = new Hashtable<>(26);
         for(char c = 'A'; c <= 'Z'; c++) {
             keyboard.put(c, false);

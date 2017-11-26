@@ -58,12 +58,48 @@ public class ClientThread extends Thread {
                     return;
                 case PickLetter:
                     recived_myletter=(char)message.data;
-
                     if(Server.gameState.players[my_number].hasTurn)
                     {
-                        System.out.println("Client "+mylogin+ " guessed letter '"+ recived_myletter+"' with success");
-                        System.out.println("Client "+mylogin+ " guessed letter '"+ recived_myletter+"' with failure");
+                        if(Server.word.contains(Character.toString(recived_myletter))) {
+                            System.out.println("Client " + mylogin + " guessed letter '" + recived_myletter + "' with success");
 
+                            for(int i=0;i<Server.word.length();i++)
+                                if(Server.word.charAt(i)==recived_myletter)
+                                {
+                                    String first=Server.gameState.word.substring(0,i);
+                                    String third = Server.gameState.word.substring(i+1);//TODO Nie wiem czy nie bedzie wyjatek przy odgadywaniu ostatniej litery
+                                    Server.gameState.word=first+recived_myletter+third;
+                                }
+                            Server.gameState.keyboard.remove(recived_myletter);
+                            Server.gameState.keyboard.put(recived_myletter, true);//
+                            if(Server.word.contains("_"))//sprawdz czy koniec
+                            {
+                                //TODO pozostaw ture na mnie i wyslij do wszystkich nowy stan gry}
+                            }
+                            else//haslo cale zostalo zgadniete
+                            {
+                                Server.gameState.players[my_number].points+=1;
+                                Server.gameState.phase=GameState.Phase.ChoosingWord;
+                                //TODO przesun token
+                                //TODO pozostaw ture na diler+1 i wyslij do wszystkich nowy stan gry}
+
+                            }
+
+                        }
+                        else
+                            System.out.println("Client "+mylogin+ " guessed letter '"+ recived_myletter+"' with failure");
+                            Server.gameState.hangmanHealth-=1;
+                            if(Server.gameState.hangmanHealth==0)
+                            {
+                                //TODO diler dostaje punkt
+                                //TODO przesun token
+                                //TODO pozostaw ture na diler+1
+                                Server.gameState.phase=GameState.Phase.ChoosingWord;
+                                //TODO wyslij do wszystkich nowy stan gry
+                            }
+                            else {
+                                //TODO przestaw ture na nastepnego gracza i wyslij do wszystkich nowy stan gry
+                            }
                     }
                     else
                         System.out.println("Client "+mylogin+ "send message with letter not in his turn, his messsage is ignored");
