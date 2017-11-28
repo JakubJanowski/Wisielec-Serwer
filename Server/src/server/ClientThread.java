@@ -12,9 +12,7 @@ public class ClientThread extends Thread {
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
 
-    private int my_number;
-    private String mylogin;
-    private char recived_myletter;
+    private String login;
 
 
     ClientThread(Socket clientSocket, byte clientIndex) {
@@ -48,93 +46,122 @@ public class ClientThread extends Thread {
     @Override
     public void run() {
         Message message;
-        while (!interrupted()) {
-            sendMessage(new Message(MessageType.Connect, "Elo 3 2 0\n"));
+        boolean result = false;
+        sendMessage(new Message(MessageType.Connect, "Elo 3 2 0\n"));
+
+        while (!result) {
+            if(interrupted())
+                return;
             message = readMessage();
             switch (message.type) {
+                case Connect:
+                    login = message.data.toString();
+                    result = Server.setLogin(clientIndex, login);
+                    if (!result) {
+                        sendMessage(new Message(MessageType.LoginTaken));
+                    }
+                    break;
+                case Disconnect:   // client wants to disconnect
+                    System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " closed connection.");
+                    Server.disconnectClient(clientIndex);
+                    return;
+                case ConnectionError:
+                    System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");
+                    Server.disconnectClient(clientIndex);
+                    return;
+                case Unknown:
+                    System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  uses different application version and communication won't be possible.");
+                default:
+                    System.out.println("Unknown message type received from client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
+            }
+            System.out.println("Message from client: " + message.type + ": " + message.data);
+        }
+
+        // game logic
+        while (!interrupted()) {
+            message = readMessage();
+            switch (message.type) {
+                case Connect:
+                    login = message.data.toString();
+                    Server.setLogin(clientIndex, login);
+                    break;
                 case Disconnect:   // client wants to disconnect
                     System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " closed connection.");
                     Server.disconnectClient(clientIndex);
                     return;
                 case PickLetter:
-                    recived_myletter=(char)message.data;
-                    if(Server.gameState.players[my_number].hasTurn && Server.gameState.phase==GameState.Phase.Guess)
-                    {
-                        if(Server.word.contains(Character.toString(recived_myletter))) {
-                            System.out.println("Client " + mylogin + " guessed letter '" + recived_myletter + "' with success");
+                    char received_myletter = (char) message.data;
+                    if (Server.gameState.players[clientIndex].hasTurn && Server.gameState.phase == GameState.Phase.Guess) {
+                        if (Server.word.contains(Character.toString(received_myletter))) {
+                            System.out.println("Client " + login + " guessed letter '" + received_myletter + "' with success");
 
-                            for(int i=0;i<Server.word.length();i++)
-                                if(Server.word.charAt(i)==recived_myletter)
-                                {
-                                    String first=Server.gameState.word.substring(0,i);
-                                    String third = Server.gameState.word.substring(i+1);//TODO Nie wiem czy nie bedzie wyjatek przy odgadywaniu ostatniej litery
-                                    Server.gameState.word=first+recived_myletter+third;
+                            for (int i = 0; i < Server.word.length(); i++)
+                                if (Server.word.charAt(i) == received_myletter) {
+                                    String first = Server.gameState.word.substring(0, i);
+                                    String third = Server.gameState.word.substring(i + 1);//TODO Nie wiem czy nie bedzie wyjatek przy odgadywaniu ostatniej litery
+                                    Server.gameState.word = first + received_myletter + third;
                                 }
-                            Server.gameState.keyboard.remove(recived_myletter);
-                            Server.gameState.keyboard.put(recived_myletter, true);//
-                            if(Server.word.contains("_"))//sprawdz czy koniec
+                            Server.gameState.keyboard.remove(received_myletter);
+                            Server.gameState.keyboard.put(received_myletter, true);//
+                            if (Server.word.contains("_"))//sprawdz czy koniec
                             {
-                                Server.gameState.players[my_number].hasTurn=true;
+                                Server.gameState.players[clientIndex].hasTurn = true;
+                                Server.updateGameState();
+                            } else//haslo cale zostalo zgadniete
+                            {
+                                Server.gameState.players[clientIndex].points += 1;
+                                Server.gameState.phase = GameState.Phase.ChoosingWord;
+                                Server.gameState.players[clientIndex].hasTurn = false;
+                                Server.gameState.players[Server.dealer].hasTurn = true;
+                                Server.setNextDealer();
+                                if (Server.counter == Server.NUMBER_OF_TURN)//koniec calej rozgrywki
+                                {
+                                    Server.gameState.phase = GameState.Phase.EndGame;
+                                }
                                 Server.updateGameState();
                             }
-                            else//haslo cale zostalo zgadniete
-                            {
-                                Server.gameState.players[my_number].points+=1;
-                                Server.gameState.phase=GameState.Phase.ChoosingWord;
-                                Server.gameState.players[my_number].hasTurn=false;
-                                Server.gameState.players[Server.dealer].hasTurn=true;
-                                Server.setNextDeler();
-                                if(Server.counter==Server.NUMBER_OF_TURN)//koniec calej rozgrywki
-                                {
-                                    Server.gameState.phase=GameState.Phase.EndGame;
-                                }
-                                 Server.updateGameState();
-                            }
 
+                        } else
+                            System.out.println("Client " + login + " guessed letter '" + received_myletter + "' with failure");
+                        Server.gameState.hangmanHealth -= 1;
+                        if (Server.gameState.hangmanHealth == 0) {
+                            Server.gameState.players[Server.dealer].points += 1;
+                            Server.setNextDealer();
+                            Server.gameState.players[clientIndex].hasTurn = false;
+                            Server.gameState.players[Server.dealer].hasTurn = true;
+                            Server.gameState.phase = GameState.Phase.ChoosingWord;
+                            if (Server.counter == Server.NUMBER_OF_TURN)//calkowity koniec rozgrywki
+                            {
+                                Server.gameState.phase = GameState.Phase.EndGame;
+                            }
+                            Server.updateGameState();
+                        } else {
+                            Server.gameState.players[Server.getNextPlayerId(clientIndex)].hasTurn = true;
+                            Server.gameState.players[clientIndex].hasTurn = false;
+                            Server.updateGameState();
                         }
-                        else
-                            System.out.println("Client "+mylogin+ " guessed letter '"+ recived_myletter+"' with failure");
-                            Server.gameState.hangmanHealth-=1;
-                            if(Server.gameState.hangmanHealth==0)
-                            {
-                                Server.gameState.players[Server.dealer].points+=1;
-                                Server.setNextDeler();
-                                Server.gameState.players[my_number].hasTurn=false;
-                                Server.gameState.players[Server.dealer].hasTurn=true;
-                                Server.gameState.phase=GameState.Phase.ChoosingWord;
-                                if(Server.counter==Server.NUMBER_OF_TURN)//calkowity koniec rozgrywki
-                                {
-                                    Server.gameState.phase=GameState.Phase.EndGame;
-                                }
-                                Server.updateGameState();
-                            }
-                            else {
-                                Server.gameState.players[Server.getNextPlayerId(my_number)].hasTurn = true;
-                                Server.gameState.players[my_number].hasTurn = false;
-                                Server.updateGameState();
-                            }
-                    }
-                    else
-                        System.out.println("Client "+mylogin+ " has send message with letter not in his turn, his messsage is ignored");
+                    } else
+                        System.out.println("Client " + login + " has send message with letter not in his turn, his messsage is ignored");
 
 
-                    return;
+                    break;
                 case PickWord:
-                    if(Server.dealer == my_number && Server.gameState.players[my_number].hasTurn && Server.gameState.phase == GameState.Phase.ChoosingWord ){
-                        String word = ((String)message.data).toUpperCase();
-                        System.out.println("Client "+mylogin+ " picked word \""+ word +"\" with success");
+                    if (Server.dealer == clientIndex && Server.gameState.players[clientIndex].hasTurn && Server.gameState.phase == GameState.Phase.ChoosingWord) {
+                        String word = ((String) message.data).toUpperCase();
+                        System.out.println("Client " + login + " picked word \"" + word + "\" with success");
                         Server.word = word;
                         Server.gameState.phase = GameState.Phase.Guess;
-                        Server.gameState.players[my_number].hasTurn = false;
-                        Server.gameState.players[Server.getNextPlayerId(my_number)].hasTurn = true;
-                        Server.gameState.word = "";
-                        for(int i = 0; i < Server.word.length(); i++){
-                            Server.gameState.word += "_";
+                        Server.gameState.players[clientIndex].hasTurn = false;
+                        Server.gameState.players[Server.getNextPlayerId(clientIndex)].hasTurn = true;
+                        StringBuilder stringBuilder = new StringBuilder(Server.word.length());
+                        for (int i = 0; i < Server.word.length(); i++) {
+                            stringBuilder.append('_');
                         }
+                        Server.gameState.word = stringBuilder.toString();
                         Server.updateGameState();
-                    }
-                    else
-                        System.out.println("Client "+mylogin+ "send message with word not in his turn, his messsage is ignored");
+                    } else
+                        System.out.println("Client " + login + "send message with word not in his turn, his messsage is ignored");
+                    break;
                 case ConnectionError:
                     System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");
                     Server.disconnectClient(clientIndex);

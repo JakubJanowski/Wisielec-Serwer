@@ -5,6 +5,9 @@ public enum MessageType {
     ConnectionError,
     Disconnect,
     GameState,
+    LoginTaken,
     PickWord,
+    PickLetter,
+    Ping,
     Unknown,
 }

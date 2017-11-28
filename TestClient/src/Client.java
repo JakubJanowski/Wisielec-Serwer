@@ -16,6 +16,7 @@ public class Client {
     private static boolean exit = false;
     private static ObjectInputStream objectInputStream;
     private static ObjectOutputStream objectOutputStream;
+    private static String login = null;
 
     public static void main(String[] args) {
         try {
@@ -51,6 +52,11 @@ public class Client {
             try {
                 if (consoleBufferedReader.ready()) {
                     switch (consoleBufferedReader.readLine().toLowerCase()) {
+                        case "login":
+                            System.out.print("Enter your login: ");
+                            login = consoleBufferedReader.readLine();
+                            sendMessage(new Message(MessageType.Connect, login));
+                            break;
                         case "exit":
                             System.out.println("Closing client...");
                             closeClient();
@@ -93,6 +99,8 @@ public class Client {
                     exit = true;
                     System.out.println("Server closed connection. Closing client.");
                     return;
+                case LoginTaken:
+                    break;
                 default:
                     System.out.println("Unknown message type received from server.");
             }
@@ -117,7 +125,7 @@ public class Client {
                     return null;
                 case "Connection reset":   // server side fault
                     System.out.println("Server is down. Trying to reconnect...");
-                    // TO DO: reconnect
+                    //TODO: reconnect
                     break;
                 default:
                     e.printStackTrace();
