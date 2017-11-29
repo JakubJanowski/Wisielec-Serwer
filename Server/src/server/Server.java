@@ -23,6 +23,7 @@ public class Server {
     private static boolean[] hasLoginSet = new boolean[MAX_CLIENTS];
     private static int pingTimeout = 2000;  // time in milliseconds after which a not responding client is considered disconnected
     private static volatile boolean[] respondedToPing = new boolean[MAX_CLIENTS];
+    private static boolean gameStarted = false;
 
     //
     static GameState gameState;
@@ -103,9 +104,6 @@ public class Server {
                 e.printStackTrace();
             }
         }
-        //gameState.hangmanHealth = 7;
-        //gameState.phase = GameState.Phase.ChoosingWord;
-        //dealer = 0;
     }
 
     private static void listClients() {
@@ -199,8 +197,50 @@ public class Server {
                 }
             }
         }
+
+        if(!gameStarted) {
+            if (isEveryoneReady()) {    // if everyone has connected and set their logins
+                startGame();
+                gameStarted = true;
+            }
+        }
+
         return true;
     }
+
+    private static void startGame() {
+        System.out.println("Starting game.");
+        gameState = new GameState();
+        for (byte i = 0; i < MAX_CLIENTS; i++){
+            gameState.players[i].points = 0;
+            gameState.players[i].isConnected = isClientConnected(i);
+            gameState.players[i].login = logins[i];
+            gameState.players[i].hasTurn = false;
+        }
+        gameState.players[0].hasTurn = true;
+        // gameState.keyboard is set in constructor
+        // gameState.hangmanHealth is set in constructor
+        gameState.phase = GameState.Phase.ChoosingWord;
+        dealer = 0;
+        updateGameState();
+    }
+
+    private static boolean isClientConnected(byte i) {
+        return clientSockets[i] != null &&
+                clientThreads[i] != null &&
+                logins[i] != null &&
+                hasLoginSet[i];
+    }
+
+    private static boolean isEveryoneReady() {
+        for(byte i = 0; i < MAX_CLIENTS; i++) {
+            if(!isClientConnected(i))
+                return false;
+        }
+        return true;
+    }
+
+
 
     private static void broadcast(Message message) {
         for (byte i = 0; i < MAX_CLIENTS; i++) {

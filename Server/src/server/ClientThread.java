@@ -59,6 +59,8 @@ public class ClientThread extends Thread {
                     result = Server.setLogin(clientIndex, login);
                     if (!result) {
                         sendMessage(new Message(MessageType.LoginTaken));
+                    } else {
+                        System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " set his login to " + login);
                     }
                     break;
                 case ConnectionError:
@@ -85,8 +87,7 @@ public class ClientThread extends Thread {
             message = readMessage();
             switch (message.type) {
                 case Connect:
-                    login = message.data.toString();
-                    Server.setLogin(clientIndex, login);
+                    // should not happen
                     break;
                 case ConnectionError:
                     System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");
@@ -208,6 +209,9 @@ public class ClientThread extends Thread {
                     break;
                 case "Connection reset by peer":
                     System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " disconnected.");
+                    break;
+                case "Socket closed":
+                    System.out.println("Closed socket for " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
                     break;
                 default:
                     e.printStackTrace();

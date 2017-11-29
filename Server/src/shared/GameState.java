@@ -5,7 +5,7 @@ import java.util.Hashtable;
 import java.io.Serializable;
 
 public class GameState implements Serializable {
-    public class Player {
+    public class Player implements Serializable {
         public int points;
         public String login;
         public boolean isConnected;
@@ -18,6 +18,7 @@ public class GameState implements Serializable {
         EndGame
     }
 
+    private final byte MAX_CLIENTS = 4;
     public Player players[];
     public Dictionary<Character, Boolean> keyboard;
     public String word;
@@ -26,7 +27,7 @@ public class GameState implements Serializable {
 
     public GameState() {
         players = new Player[4];
-        for (int i = 0; i < 4; i++)
+        for (byte i = 0; i < MAX_CLIENTS; i++)
             players[i] = new Player();
         hangmanHealth=7;
         keyboard = new Hashtable<>(26);

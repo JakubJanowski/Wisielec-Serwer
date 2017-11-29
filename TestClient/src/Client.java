@@ -88,10 +88,12 @@ public class Client {
 
     private static void client() {
         Message message;
+        boolean printMessage;
         while (!Thread.interrupted()) {
             message = readMessage();
             if (message == null)    // client should quit
                 return;
+            printMessage = true;
             switch (message.type) {
                 case Connect:  // won't happen in target app
                     break;
@@ -103,11 +105,13 @@ public class Client {
                     break;
                 case Ping:
                     sendMessage(new Message(MessageType.Ping));
+                    printMessage = false;
                     break;
                 default:
                     System.out.println("Unknown message type received from server.");
             }
-            System.out.println("Message from server: " + message.type + ": " + message.data);
+            if (printMessage)
+                System.out.println("Message from server: " + message.type + ": " + message.data);
         }
     }
 
