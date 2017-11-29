@@ -61,20 +61,23 @@ public class ClientThread extends Thread {
                         sendMessage(new Message(MessageType.LoginTaken));
                     }
                     break;
-                case Disconnect:   // client wants to disconnect
-                    System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " closed connection.");
-                    Server.disconnectClient(clientIndex);
-                    return;
                 case ConnectionError:
                     System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");
                     Server.disconnectClient(clientIndex);
                     return;
+                case Disconnect:   // client wants to disconnect
+                    System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " closed connection.");
+                    Server.disconnectClient(clientIndex);
+                    return;
+                case Ping:
+                    Server.pingResponse(clientIndex);
+                    break;
                 case Unknown:
                     System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  uses different application version and communication won't be possible.");
                 default:
                     System.out.println("Unknown message type received from client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
             }
-            System.out.println("Message from client: " + message.type + ": " + message.data);
+            //System.out.println("Message from client: " + message.type + ": " + message.data);
         }
 
         // game logic
@@ -85,6 +88,10 @@ public class ClientThread extends Thread {
                     login = message.data.toString();
                     Server.setLogin(clientIndex, login);
                     break;
+                case ConnectionError:
+                    System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");
+                    Server.disconnectClient(clientIndex);
+                    return;
                 case Disconnect:   // client wants to disconnect
                     System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " closed connection.");
                     Server.disconnectClient(clientIndex);
@@ -162,16 +169,24 @@ public class ClientThread extends Thread {
                     } else
                         System.out.println("Client " + login + "send message with word not in his turn, his messsage is ignored");
                     break;
-                case ConnectionError:
-                    System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  connection error.");
-                    Server.disconnectClient(clientIndex);
-                    return;
+                case Ping:
+                    Server.pingResponse(clientIndex);
+                    break;
                 case Unknown:
                     System.out.println(clientSocket.getInetAddress() + ":" + clientSocket.getPort() + "  uses different application version and communication won't be possible.");
                 default:
                     System.out.println("Unknown message type received from client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
             }
-            System.out.println("Message from client: " + message.type + ": " + message.data);
+            //System.out.println("Message from client: " + message.type + ": " + message.data);
+        }
+    }
+
+    void sendMessage(Message message, boolean suppress) {
+        try {
+            objectOutputStream.writeObject(message);
+        } catch (IOException e) {
+            if(!suppress)
+                e.printStackTrace();
         }
     }
 

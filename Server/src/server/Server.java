@@ -17,9 +17,12 @@ public class Server {
     private static ServerSocket serverSocket;
     private static final ClientThread[] clientThreads = new ClientThread[MAX_CLIENTS];
     private static Thread listenerThread = null;
+    private static Thread pingThread = null;
     private static boolean exit = false;
     private static String[] logins = new String[MAX_CLIENTS];
     private static boolean[] hasLoginSet = new boolean[MAX_CLIENTS];
+    private static int pingTimeout = 2000;  // time in milliseconds after which a not responding client is considered disconnected
+    private static volatile boolean[] respondedToPing = new boolean[MAX_CLIENTS];
 
     //
     static GameState gameState;
@@ -30,6 +33,9 @@ public class Server {
 
 
     public static void main(String[] args) {
+        for (int i = 0; i < MAX_CLIENTS; i++)
+            respondedToPing[i] = true;
+
         try {
             System.out.println("Starting server...");
             serverSocket = new ServerSocket(PORT);
@@ -42,6 +48,8 @@ public class Server {
 
         listenerThread = new Thread(Server::listenClients);
         listenerThread.start();
+        pingThread = new Thread(Server::pingClients);
+        pingThread.start();
 
         BufferedReader consoleBufferedReader = new BufferedReader(new InputStreamReader(System.in));
         do {
@@ -194,15 +202,40 @@ public class Server {
         return true;
     }
 
+    private static void broadcast(Message message) {
+        for (byte i = 0; i < MAX_CLIENTS; i++) {
+            if (clientThreads[i] != null) {
+                clientThreads[i].sendMessage(message);
+            }
+        }
+    }
+
     private static void pingClients() {
-        /*while (!exit) {
-            Thread.Wait
+        while (!exit) {
+            try {
+                Thread.sleep(pingTimeout);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             for (byte i = 0; i < MAX_CLIENTS; i++) {
                 if (clientThreads[i] != null) {
-                    clientThreads[i].sendMessage(new Message(MessageType.Ping));
+                    if (!respondedToPing[i]) {
+                        System.out.println("Connection with " + getClientString(i) + " timed out.");
+                        disconnectClient(i);
+                    } else {
+                        respondedToPing[i] = false;
+                        clientThreads[i].sendMessage(new Message(MessageType.Ping));
+                    }
+                } else {
+                    respondedToPing[i] = true;
                 }
             }
-        }*/
+        }
+    }
+
+
+    static void pingResponse(int clientIndex) {
+        respondedToPing[clientIndex] = true;
     }
 
     private static void closeServer() {
@@ -223,11 +256,9 @@ public class Server {
 
     static void disconnectClient(byte clientIndex) {
         synchronized (LOCK) {
-            //if (logins[clientIndex] != null) {
-            //    wasConnected[clientIndex] = true;
-            //}
             if (clientThreads[clientIndex] != null) {
                 if (!clientThreads[clientIndex].isInterrupted()) {
+                    clientThreads[clientIndex].sendMessage(new Message(MessageType.Disconnect), true);
                     clientThreads[clientIndex].interrupt();
                 }
                 clientThreads[clientIndex] = null;
@@ -248,11 +279,7 @@ public class Server {
     }
 
     static void updateGameState() {
-        for (byte i = 0; i < MAX_CLIENTS; i++) {
-            if (clientThreads[i] != null) {
-                clientThreads[i].sendMessage(new Message(MessageType.GameState, gameState));
-            }
-        }
+        broadcast(new Message(MessageType.GameState, gameState));
     }
 
     static int getNextPlayerId(int id) {
@@ -268,5 +295,14 @@ public class Server {
         dealer++;
         dealer %= MAX_CLIENTS;
 
+    }
+
+    private static String getClientString(byte index) {
+        if (logins[index] != null && hasLoginSet[index]) {
+            return logins[index];
+        } else if (clientSockets[index] != null) {
+            return clientSockets[index].getInetAddress() + ":" + clientSockets[index].getPort();
+        }
+        return null;
     }
 }

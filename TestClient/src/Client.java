@@ -101,6 +101,9 @@ public class Client {
                     return;
                 case LoginTaken:
                     break;
+                case Ping:
+                    sendMessage(new Message(MessageType.Ping));
+                    break;
                 default:
                     System.out.println("Unknown message type received from server.");
             }
