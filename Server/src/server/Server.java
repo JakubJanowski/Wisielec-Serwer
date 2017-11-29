@@ -5,8 +5,11 @@ import shared.Message;
 import shared.MessageType;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.sql.Timestamp;
 
 public class Server {
     private static final short PORT = 6969;
@@ -31,9 +34,27 @@ public class Server {
     static int dealer;
     static int counter = 0;
     static final int NUMBER_OF_TURN = 8;
+    static long  timestamp_last_changed_player;
+    static long max_time_for_picking_word=15*1000;//15 sekund
+    static long max_time_for_picking_letter=15*1000;
+
 
 
     public static void main(String[] args) {
+
+        System.out.println("My IP addreses:");
+        try {
+            InetAddress inet = InetAddress.getLocalHost();
+            InetAddress[] ips = InetAddress.getAllByName(inet.getCanonicalHostName());
+            if (ips  != null ) {
+                for (int i = 0; i < ips.length; i++) {
+                    System.out.println(ips[i]);
+                }
+            }
+        } catch (UnknownHostException e) {
+
+        }
+
         for (int i = 0; i < MAX_CLIENTS; i++)
             respondedToPing[i] = true;
 
@@ -176,7 +197,7 @@ public class Server {
                 }
             } else {
                 if (lastLoginIndex == -1) {   // client wasn't logged in before
-                    if (loginIndex == clientIndex) {
+                        if (loginIndex == clientIndex) {
                         logins[clientIndex] = login;
                     } else {    // someone else has disconnected and we're leaving entry in logins for him to reconnect
                         logins[loginIndex] = logins[clientIndex];
@@ -323,10 +344,13 @@ public class Server {
     }
 
     static int getNextPlayerId(int id) {
+
         id++;
         id %= MAX_CLIENTS;
-        if (id == dealer)
+        if (id == dealer ||gameState.players[id].isConnected==false )
             return getNextPlayerId(id);
+        timestamp_last_changed_player = System.currentTimeMillis();
+
         return id;
     }
 
