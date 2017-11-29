@@ -384,7 +384,30 @@ public class Server {
     }
 
     static void updateGameState() {
+        System.out.println("-----------Update start-------------");
+        System.out.println("Evrybody have updated data on app");
+
+        if(gameState.phase== GameState.Phase.ChoosingWord){
+            System.out.println("Phase Chossing word");
+            System.out.println("Dealer is "+ dealer);
+        }
+        else if(gameState.phase== GameState.Phase.Guess) {
+            System.out.println("Phase Guess");
+            System.out.println("We are guessing word:"+word+" and evrybody can see: "+gameState.word);
+        }
+        else if(gameState.phase== GameState.Phase.EndGame) {
+            System.out.println("Phase EndGame");
+        }
+
+        System.out.println("Hangman has got "+ gameState.hangmanHealth + "lives");
+        for(int i=0;i<MAX_CLIENTS;i++)
+            System.out.println(gameState.players[i].login+ "has turn="+gameState.players[i].hasTurn+" is connected="+gameState.players[i].isConnected);
+        System.out.println("-----------Update end-------------");
+
         broadcast(new Message(MessageType.GameState, gameState));
+
+
+
     }
 
     static int getNextPlayerId(int id) {

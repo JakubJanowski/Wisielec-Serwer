@@ -114,6 +114,7 @@ public class ClientThread extends Thread {
                             if (Server.word.contains("_"))//sprawdz czy koniec
                             {
                                 Server.gameState.players[clientIndex].hasTurn = true;
+                                Server.timestamp_last_changed_player = System.currentTimeMillis();
                                 Server.updateGameState();
                             } else//haslo cale zostalo zgadniete
                             {
@@ -126,6 +127,7 @@ public class ClientThread extends Thread {
                                 {
                                     Server.gameState.phase = GameState.Phase.EndGame;
                                 }
+                                Server.timestamp_last_changed_player = System.currentTimeMillis();
                                 Server.updateGameState();
                             }
 
