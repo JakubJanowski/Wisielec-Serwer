@@ -74,8 +74,7 @@ public class Server {
         pingThread = new Thread(Server::pingClients);
         pingThread.start();
 
-        timeLimitThread =new Thread(Server::check_time);
-        timeLimitThread.start();
+
 
         BufferedReader consoleBufferedReader = new BufferedReader(new InputStreamReader(System.in));
         do {
@@ -287,6 +286,8 @@ public class Server {
         dealer = 0;
         Server.timestamp_last_changed_player = System.currentTimeMillis();
         updateGameState();
+        timeLimitThread =new Thread(Server::check_time);
+        timeLimitThread.start();
     }
 
     private static boolean isClientConnected(byte i) {
