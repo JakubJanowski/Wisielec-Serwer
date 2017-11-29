@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0f2ef5ed-6d4a-4df5-8d34-1a9e03c14983" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/TestClient/Client$1.class" afterPath="$PROJECT_DIR$/out/production/TestClient/Client$1.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../Server/src/server/ClientThread.java" afterPath="$PROJECT_DIR$/../Server/src/server/ClientThread.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../Server/src/server/Server.java" afterPath="$PROJECT_DIR$/../Server/src/server/Server.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/Client.java" afterPath="$PROJECT_DIR$/src/Client.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../Server/src/shared/GameState.java" afterPath="$PROJECT_DIR$/../Server/src/shared/GameState.java" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -99,7 +96,7 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
+  <component name="ProjectFrameBounds" extendedState="1">
     <option name="x" value="793" />
     <option name="width" value="814" />
     <option name="height" value="867" />
@@ -288,7 +285,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="793" y="0" width="814" height="867" extended-state="0" />
+    <frame x="793" y="0" width="814" height="867" extended-state="1" />
     <editor active="true" />
     <layout>
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
