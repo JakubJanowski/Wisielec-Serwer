@@ -34,10 +34,11 @@ public class Server {
     static int dealer;
     static int counter = 0;
     static final int NUMBER_OF_TURN = 8;
-    static long  timestamp_last_changed_player;
-    static long max_time_for_picking_word=15*1000;//15 sekund
-    static long max_time_for_picking_letter=15*1000;
 
+    public static long  timestamp_last_changed_player;
+    static long max_time_for_picking_word=25*1000;//15 sekund
+    static long max_time_for_picking_letter=15*1000;
+    private static Thread  timeLimitThread=null;
 
 
     public static void main(String[] args) {
@@ -73,6 +74,9 @@ public class Server {
         pingThread = new Thread(Server::pingClients);
         pingThread.start();
 
+        timeLimitThread =new Thread(Server::check_time);
+        timeLimitThread.start();
+
         BufferedReader consoleBufferedReader = new BufferedReader(new InputStreamReader(System.in));
         do {
             try {
@@ -99,6 +103,44 @@ public class Server {
             }
         } while (true);
     }
+
+    private  static void check_time(){
+        long time_now;
+        int current_player;
+        while(true){
+            time_now=System.currentTimeMillis();
+            if(gameState.phase== GameState.Phase.ChoosingWord && (time_now-timestamp_last_changed_player)>max_time_for_picking_word )
+            {
+                current_player=dealer;
+                setNextDealer();
+                Server.gameState.players[current_player].hasTurn = false;
+                Server.gameState.players[Server.dealer].hasTurn = true;
+
+                Server.timestamp_last_changed_player = System.currentTimeMillis();
+                Server.updateGameState();
+            }
+            else if(gameState.phase== GameState.Phase.Guess && (time_now-timestamp_last_changed_player)>max_time_for_picking_letter )
+            {
+                current_player=99;//aby kod sie nie wysypał bo current_player mnie jest zainicjalizowane
+                for(int i=0;i<MAX_CLIENTS;i++)
+                {
+                    if(gameState.players[i].hasTurn){
+                        current_player=i;
+                    }
+                }
+                Server.gameState.players[current_player].hasTurn = false;
+                Server.gameState.players[Server.getNextPlayerId(current_player)].hasTurn = true;
+                Server.timestamp_last_changed_player = System.currentTimeMillis();
+                Server.updateGameState();
+            }
+            try {
+                Thread.sleep(900);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     private static void listenClients() {
         while (true) {
@@ -243,6 +285,7 @@ public class Server {
         // gameState.hangmanHealth is set in constructor
         gameState.phase = GameState.Phase.ChoosingWord;
         dealer = 0;
+        Server.timestamp_last_changed_player = System.currentTimeMillis();
         updateGameState();
     }
 
