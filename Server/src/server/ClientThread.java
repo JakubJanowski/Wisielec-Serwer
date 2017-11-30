@@ -100,18 +100,17 @@ public class ClientThread extends Thread {
                 case PickLetter:
                     char letter = Character.toUpperCase((char) message.data);
                     if (Server.gameState.players[clientIndex].hasTurn && Server.gameState.phase == GameState.Phase.Guess) {
+                        Server.gameState.keyboard.put(letter, true);
                         if (Server.word.contains(Character.toString(letter))) {
                             System.out.println(login + " guessed letter '" + letter + "' with success");
 
                             for (int i = 0; i < Server.word.length(); i++) {
                                 if (Server.word.charAt(i) == letter) {
                                     String first = Server.gameState.word.substring(0, i);
-                                    String third = Server.gameState.word.substring(i + 1);//TODO Nie wiem czy nie bedzie wyjatek przy odgadywaniu ostatniej litery
+                                    String third = Server.gameState.word.substring(i + 1);
                                     Server.gameState.word = first + letter + third;
                                 }
                             }
-                            ///Server.gameState.keyboard.remove(letter);
-                            Server.gameState.keyboard.put(letter, true);//
                             if (Server.gameState.word.contains("_")) {   // sprawdz czy koniec
                                 Server.gameState.players[clientIndex].hasTurn = true;
                                 Server.turnStartTimestamp = System.currentTimeMillis();
@@ -119,8 +118,8 @@ public class ClientThread extends Thread {
                                 Server.gameState.players[clientIndex].points += 1;
                                 Server.gameState.phase = GameState.Phase.ChoosingWord;
                                 Server.gameState.players[clientIndex].hasTurn = false;
-                                Server.gameState.players[Server.dealer].hasTurn = true;
                                 Server.setNextDealer();
+                                Server.gameState.players[Server.dealer].hasTurn = true;
                                 if (Server.counter == Server.NUMBER_OF_TURN)    // koniec calej rozgrywki
                                     Server.gameState.phase = GameState.Phase.EndGame;
                                 Server.turnStartTimestamp = System.currentTimeMillis();
@@ -155,6 +154,9 @@ public class ClientThread extends Thread {
                         System.out.println(login + " picked word: " + word);
                         Server.word = word;
                         Server.gameState.phase = GameState.Phase.Guess;
+                        Server.gameState.hangmanHealth = 7;
+                        for(char c = 'A'; c <= 'Z'; c++)
+                            Server.gameState.keyboard.put(c, false);
                         Server.gameState.players[clientIndex].hasTurn = false;
                         Server.gameState.players[Server.getNextPlayerId(clientIndex)].hasTurn = true;
                         StringBuilder stringBuilder = new StringBuilder(Server.word.length());

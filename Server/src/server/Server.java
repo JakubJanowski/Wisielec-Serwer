@@ -35,7 +35,7 @@ public class Server {
     static int counter = 0;
     static final int NUMBER_OF_TURN = 8;
 
-    public static long turnStartTimestamp;
+    static long turnStartTimestamp;
     private static final long maxTimeForPickingWord = 25 * 1000;//15 sekund
     private static final long maxTimeForPickingLetter = 15 * 1000;
     private static Thread timeLimitThread = null;
@@ -48,11 +48,11 @@ public class Server {
             InetAddress inet = InetAddress.getLocalHost();
             InetAddress[] ips = InetAddress.getAllByName(inet.getCanonicalHostName());
             if (ips != null) {
-                for (int i = 0; i < ips.length; i++) {
-                    System.out.println(ips[i]);
+                for (InetAddress ip : ips) {
+                    System.out.println(ip);
                 }
             }
-        } catch (UnknownHostException e) {
+        } catch (UnknownHostException ignored) {
 
         }
 
@@ -102,7 +102,7 @@ public class Server {
         } while (true);
     }
 
-    public static void turnTaken() {
+    static void turnTaken() {
         turnStartTimestamp = System.currentTimeMillis();
     }
 
@@ -382,6 +382,8 @@ public class Server {
     }
 
     static void updateGameState() {
+        for(byte i = 0; i < MAX_CLIENTS; i++)
+            gameState.players[i].isConnected = isClientConnected(i);
         printGameState();
         broadcast(new Message(MessageType.GameState, gameState));
     }
@@ -406,7 +408,7 @@ public class Server {
         System.out.println();
     }
 
-    static byte getCurrentPlayer() {
+    private static byte getCurrentPlayer() {
         for (byte i = 0; i < MAX_CLIENTS; i++)
             if (gameState.players[i].hasTurn)
                 return i;
