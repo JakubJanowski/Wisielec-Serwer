@@ -110,16 +110,19 @@ public class Server {
             time_now=System.currentTimeMillis();
             if(gameState.phase== GameState.Phase.ChoosingWord && (time_now-timestamp_last_changed_player)>max_time_for_picking_word )
             {
+                System.out.println("In phase Choosing word player didn't  choose a new password / timeout");
                 current_player=dealer;
                 setNextDealer();
                 Server.gameState.players[current_player].hasTurn = false;
                 Server.gameState.players[Server.dealer].hasTurn = true;
+                System.out.println("dealer/player number= "+current_player+ "lost turn, new dealer is "+dealer);
 
                 Server.timestamp_last_changed_player = System.currentTimeMillis();
                 Server.updateGameState();
             }
             else if(gameState.phase== GameState.Phase.Guess && (time_now-timestamp_last_changed_player)>max_time_for_picking_letter )
             {
+                System.out.println("In phase guess player didn't  choose a new letter / timeout");
                 current_player=99;//aby kod sie nie wysypał bo current_player mnie jest zainicjalizowane
                 for(int i=0;i<MAX_CLIENTS;i++)
                 {
@@ -127,6 +130,7 @@ public class Server {
                         current_player=i;
                     }
                 }
+                System.out.println("player number= "+current_player+ "lost turn, new new player has turn ");
                 Server.gameState.players[current_player].hasTurn = false;
                 Server.gameState.players[Server.getNextPlayerId(current_player)].hasTurn = true;
                 Server.timestamp_last_changed_player = System.currentTimeMillis();
@@ -136,6 +140,7 @@ public class Server {
                 Thread.sleep(900);
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                System.out.println("time out exception: "+e.getMessage());
             }
         }
     }
