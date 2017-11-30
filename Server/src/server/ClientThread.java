@@ -97,14 +97,10 @@ public class ClientThread extends Thread {
                     System.out.println("Client " + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " closed connection.");
                     Server.disconnectClient(clientIndex);
                     return;
-                    //TODO//////////////////////////////////////////////////////////////////
-                // nadeslana litera nie jest usuwana z gamestate.keyboard
-                // i nie jest dodawana do gamestate.word
-
                 case PickLetter:
-                    char letter = (char) message.data;
+                    char letter = Character.toUpperCase((char) message.data);
                     if (Server.gameState.players[clientIndex].hasTurn && Server.gameState.phase == GameState.Phase.Guess) {
-                        if (Server.word.contains(Character.toString(Character.toUpperCase(letter)))) {
+                        if (Server.word.contains(Character.toString(letter))) {
                             System.out.println(login + " guessed letter '" + letter + "' with success");
 
                             for (int i = 0; i < Server.word.length(); i++) {
