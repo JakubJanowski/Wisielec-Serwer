@@ -31,14 +31,14 @@ public class Server {
     //
     static GameState gameState;
     static String word;
-    static int dealer;
+    static byte dealer;
     static int counter = 0;
     static final int NUMBER_OF_TURN = 8;
 
-    public static long  timestamp_last_changed_player;
-    static long max_time_for_picking_word=25*1000;//15 sekund
-    static long max_time_for_picking_letter=15*1000;
-    private static Thread  timeLimitThread=null;
+    public static long turnStartTimestamp;
+    private static final long maxTimeForPickingWord = 25 * 1000;//15 sekund
+    private static final long maxTimeForPickingLetter = 15 * 1000;
+    private static Thread timeLimitThread = null;
 
 
     public static void main(String[] args) {
@@ -47,7 +47,7 @@ public class Server {
         try {
             InetAddress inet = InetAddress.getLocalHost();
             InetAddress[] ips = InetAddress.getAllByName(inet.getCanonicalHostName());
-            if (ips  != null ) {
+            if (ips != null) {
                 for (int i = 0; i < ips.length; i++) {
                     System.out.println(ips[i]);
                 }
@@ -73,7 +73,6 @@ public class Server {
         listenerThread.start();
         pingThread = new Thread(Server::pingClients);
         pingThread.start();
-
 
 
         BufferedReader consoleBufferedReader = new BufferedReader(new InputStreamReader(System.in));
@@ -103,44 +102,39 @@ public class Server {
         } while (true);
     }
 
-    private  static void check_time(){
-        long time_now;
-        int current_player;
-        while(true){
-            time_now=System.currentTimeMillis();
-            if(gameState.phase== GameState.Phase.ChoosingWord && (time_now-timestamp_last_changed_player)>max_time_for_picking_word )
-            {
-                System.out.println("In phase Choosing word player didn't  choose a new password / timeout");
-                current_player=dealer;
-                setNextDealer();
-                Server.gameState.players[current_player].hasTurn = false;
-                Server.gameState.players[Server.dealer].hasTurn = true;
-                System.out.println("dealer/player number= "+current_player+ "lost turn, new dealer is "+dealer);
+    public static void turnTaken() {
+        turnStartTimestamp = System.currentTimeMillis();
+    }
 
-                Server.timestamp_last_changed_player = System.currentTimeMillis();
+    private static void check_time() {
+        long timeNow;
+        byte currentPlayer;
+        byte nextPlayer;
+        while (!exit) {
+            timeNow = System.currentTimeMillis();
+            if (gameState.phase == GameState.Phase.ChoosingWord && (timeNow - turnStartTimestamp) > maxTimeForPickingWord) {
+                currentPlayer = dealer;
+                setNextDealer();
+                Server.gameState.players[currentPlayer].hasTurn = false;
+                Server.gameState.players[Server.dealer].hasTurn = true;
+                System.out.println(logins[currentPlayer] + " lost turn, new dealer is " + dealer);
+
+                Server.turnStartTimestamp = System.currentTimeMillis();
                 Server.updateGameState();
-            }
-            else if(gameState.phase== GameState.Phase.Guess && (time_now-timestamp_last_changed_player)>max_time_for_picking_letter )
-            {
-                System.out.println("In phase guess player didn't  choose a new letter / timeout");
-                current_player=99;//aby kod sie nie wysypał bo current_player mnie jest zainicjalizowane
-                for(int i=0;i<MAX_CLIENTS;i++)
-                {
-                    if(gameState.players[i].hasTurn){
-                        current_player=i;
-                    }
-                }
-                System.out.println("player number= "+current_player+ "lost turn, new new player has turn ");
-                Server.gameState.players[current_player].hasTurn = false;
-                Server.gameState.players[Server.getNextPlayerId(current_player)].hasTurn = true;
-                Server.timestamp_last_changed_player = System.currentTimeMillis();
+            } else if (gameState.phase == GameState.Phase.Guess && (timeNow - turnStartTimestamp) > maxTimeForPickingLetter) {
+                currentPlayer = getCurrentPlayer();
+                nextPlayer = getNextPlayerId(currentPlayer);
+                System.out.println(logins[currentPlayer] + " lost turn, " + logins[nextPlayer] + " has turn.");
+                Server.gameState.players[currentPlayer].hasTurn = false;
+                Server.gameState.players[nextPlayer].hasTurn = true;
+                Server.turnStartTimestamp = System.currentTimeMillis();
                 Server.updateGameState();
             }
             try {
-                Thread.sleep(900);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
-                System.out.println("time out exception: "+e.getMessage());
+                System.out.println("timeout exception: " + e.getMessage());
             }
         }
     }
@@ -243,7 +237,7 @@ public class Server {
                 }
             } else {
                 if (lastLoginIndex == -1) {   // client wasn't logged in before
-                        if (loginIndex == clientIndex) {
+                    if (loginIndex == clientIndex) {
                         logins[clientIndex] = login;
                     } else {    // someone else has disconnected and we're leaving entry in logins for him to reconnect
                         logins[loginIndex] = logins[clientIndex];
@@ -265,7 +259,7 @@ public class Server {
             }
         }
 
-        if(!gameStarted) {
+        if (!gameStarted) {
             if (isEveryoneReady()) {    // if everyone has connected and set their logins
                 startGame();
                 gameStarted = true;
@@ -278,7 +272,7 @@ public class Server {
     private static void startGame() {
         System.out.println("Starting game.");
         gameState = new GameState();
-        for (byte i = 0; i < MAX_CLIENTS; i++){
+        for (byte i = 0; i < MAX_CLIENTS; i++) {
             gameState.players[i].points = 0;
             gameState.players[i].isConnected = isClientConnected(i);
             gameState.players[i].login = logins[i];
@@ -289,9 +283,9 @@ public class Server {
         // gameState.hangmanHealth is set in constructor
         gameState.phase = GameState.Phase.ChoosingWord;
         dealer = 0;
-        Server.timestamp_last_changed_player = System.currentTimeMillis();
+        Server.turnStartTimestamp = System.currentTimeMillis();
         updateGameState();
-        timeLimitThread =new Thread(Server::check_time);
+        timeLimitThread = new Thread(Server::check_time);
         timeLimitThread.start();
     }
 
@@ -303,13 +297,12 @@ public class Server {
     }
 
     private static boolean isEveryoneReady() {
-        for(byte i = 0; i < MAX_CLIENTS; i++) {
-            if(!isClientConnected(i))
+        for (byte i = 0; i < MAX_CLIENTS; i++) {
+            if (!isClientConnected(i))
                 return false;
         }
         return true;
     }
-
 
 
     private static void broadcast(Message message) {
@@ -389,39 +382,44 @@ public class Server {
     }
 
     static void updateGameState() {
-        System.out.println("-----------Update start-------------");
-        System.out.println("Evrybody have updated data on app");
-
-        if(gameState.phase== GameState.Phase.ChoosingWord){
-            System.out.println("Phase Chossing word");
-            System.out.println("Dealer is "+ dealer);
-        }
-        else if(gameState.phase== GameState.Phase.Guess) {
-            System.out.println("Phase Guess");
-            System.out.println("We are guessing word:"+word+" and evrybody can see: "+gameState.word);
-        }
-        else if(gameState.phase== GameState.Phase.EndGame) {
-            System.out.println("Phase EndGame");
-        }
-
-        System.out.println("Hangman has got "+ gameState.hangmanHealth + "lives");
-        for(int i=0;i<MAX_CLIENTS;i++)
-            System.out.println(gameState.players[i].login+ "has turn="+gameState.players[i].hasTurn+" is connected="+gameState.players[i].isConnected);
-        System.out.println("-----------Update end-------------");
-
+        printGameState();
         broadcast(new Message(MessageType.GameState, gameState));
-
-
-
     }
 
-    static int getNextPlayerId(int id) {
+    private static void printGameState() {
+        System.out.println("Game State:");
+        System.out.println("\tPhase: " + gameState.phase);
+        System.out.println("\tDealer: " + dealer);
+        System.out.println("\tWord: " + gameState.word + " / " + word);
+        System.out.println("\tHangman health: " + gameState.hangmanHealth + "/" + 7);
+        System.out.println("\tPlayers:");
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            System.out.println("\t\t" + gameState.players[i].login + ":");
+            System.out.println("\t\t\tpoints: " + gameState.players[i].points);
+            System.out.println("\t\t\thasTurn: " + gameState.players[i].hasTurn);
+            System.out.println("\t\t\tisConnected: " + gameState.players[i].isConnected);
+        }
+        System.out.print("\tUsed letters:");
+        for(char c = 'A'; c <= 'Z'; c++)
+            if (!gameState.keyboard.get(c))
+                System.out.print(" " + c);
+        System.out.println();
+    }
+
+    static byte getCurrentPlayer() {
+        for (byte i = 0; i < MAX_CLIENTS; i++)
+            if (gameState.players[i].hasTurn)
+                return i;
+        return MAX_CLIENTS;
+    }
+
+    static byte getNextPlayerId(byte id) {
 
         id++;
         id %= MAX_CLIENTS;
-        if (id == dealer ||gameState.players[id].isConnected==false )
+        if (id == dealer || !gameState.players[id].isConnected)
             return getNextPlayerId(id);
-        timestamp_last_changed_player = System.currentTimeMillis();
+        turnStartTimestamp = System.currentTimeMillis();
 
         return id;
     }

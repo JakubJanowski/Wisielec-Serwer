@@ -57,6 +57,16 @@ public class Client {
                             login = consoleBufferedReader.readLine();
                             sendMessage(new Message(MessageType.Connect, login));
                             break;
+                        case "letter":
+                            System.out.print("Enter your word: ");
+                            String letter = consoleBufferedReader.readLine();
+                            sendMessage(new Message(MessageType.PickLetter, letter.charAt(0)));
+                            break;
+                        case "word":
+                            System.out.print("Enter your word: ");
+                            String word = consoleBufferedReader.readLine();
+                            sendMessage(new Message(MessageType.PickWord, word));
+                            break;
                         case "exit":
                             System.out.println("Closing client...");
                             closeClient();
