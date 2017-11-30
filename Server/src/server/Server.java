@@ -33,7 +33,7 @@ public class Server {
     static String word;
     static byte dealer;
     static int counter = 0;
-    static final int NUMBER_OF_TURN = 8;
+    static final int NUMBER_OF_TURN = 4;
 
     static long turnStartTimestamp;
     private static final long maxTimeForPickingWord = 25 * 1000;//15 sekund
@@ -386,12 +386,14 @@ public class Server {
             gameState.players[i].isConnected = isClientConnected(i);
         printGameState();
         broadcast(new Message(MessageType.GameState, gameState));
+        printGameState();
     }
 
     private static void printGameState() {
         System.out.println("Game State:");
         System.out.println("\tPhase: " + gameState.phase);
         System.out.println("\tDealer: " + dealer);
+        System.out.println("\tRound: " + counter);
         System.out.println("\tWord: " + gameState.word + " / " + word);
         System.out.println("\tHangman health: " + gameState.hangmanHealth + "/" + 7);
         System.out.println("\tPlayers:");
@@ -427,7 +429,6 @@ public class Server {
     }
 
     static void setNextDealer() {
-        counter++;
         dealer++;
         dealer %= MAX_CLIENTS;
 

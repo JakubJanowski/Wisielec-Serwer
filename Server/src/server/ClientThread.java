@@ -116,6 +116,7 @@ public class ClientThread extends Thread {
                                 Server.turnStartTimestamp = System.currentTimeMillis();
                             } else {    // haslo cale zostalo zgadniete
                                 Server.gameState.players[clientIndex].points += 1;
+                                Server.counter++;
                                 Server.gameState.phase = GameState.Phase.ChoosingWord;
                                 Server.gameState.players[clientIndex].hasTurn = false;
                                 Server.setNextDealer();
@@ -128,6 +129,7 @@ public class ClientThread extends Thread {
                             System.out.println(login + " guessed letter '" + letter + "' with failure");
                             Server.gameState.hangmanHealth -= 1;
                             if (Server.gameState.hangmanHealth == 0) {
+                                Server.counter++;
                                 Server.gameState.players[Server.dealer].points += 1;
                                 Server.setNextDealer();
                                 Server.gameState.players[clientIndex].hasTurn = false;
@@ -160,8 +162,12 @@ public class ClientThread extends Thread {
                         Server.gameState.players[clientIndex].hasTurn = false;
                         Server.gameState.players[Server.getNextPlayerId(clientIndex)].hasTurn = true;
                         StringBuilder stringBuilder = new StringBuilder(Server.word.length());
-                        for (int i = 0; i < Server.word.length(); i++)
-                            stringBuilder.append('_');
+                        for (int i = 0; i < Server.word.length(); i++) {
+                            if (Server.word.charAt(i) == ' ')
+                                stringBuilder.append(' ');
+                            else
+                                stringBuilder.append('_');
+                        }
                         Server.gameState.word = stringBuilder.toString();
                         Server.updateGameState();
                         Server.turnTaken();
@@ -184,6 +190,7 @@ public class ClientThread extends Thread {
     void sendMessage(Message message, boolean suppress) {
         try {
             objectOutputStream.writeObject(message);
+            objectOutputStream.reset();
         } catch (IOException e) {
             if (!suppress)
                 e.printStackTrace();
@@ -193,6 +200,7 @@ public class ClientThread extends Thread {
     void sendMessage(Message message) {
         try {
             objectOutputStream.writeObject(message);
+            objectOutputStream.reset();
         } catch (IOException e) {
             e.printStackTrace();
         }

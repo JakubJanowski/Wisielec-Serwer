@@ -117,6 +117,25 @@ public class Client {
                     sendMessage(new Message(MessageType.Ping));
                     printMessage = false;
                     break;
+                case GameState:
+                    GameState gameState = (GameState)message.data;
+                    System.out.println("Game State:");
+                    System.out.println("\tPhase: " + gameState.phase);
+                    System.out.println("\tWord: " + gameState.word);
+                    System.out.println("\tHangman health: " + gameState.hangmanHealth + "/" + 7);
+                    System.out.println("\tPlayers:");
+                    for (int i = 0; i < 4; i++) {
+                        System.out.println("\t\t" + gameState.players[i].login + ":");
+                        System.out.println("\t\t\tpoints: " + gameState.players[i].points);
+                        System.out.println("\t\t\thasTurn: " + gameState.players[i].hasTurn);
+                        System.out.println("\t\t\tisConnected: " + gameState.players[i].isConnected);
+                    }
+                    System.out.print("\tUsed letters:");
+                    for(char c = 'A'; c <= 'Z'; c++)
+                        if (!gameState.keyboard.get(c))
+                            System.out.print(" " + c);
+                    System.out.println();
+                    break;
                 default:
                     System.out.println("Unknown message type received from server.");
             }
