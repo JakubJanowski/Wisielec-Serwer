@@ -228,6 +228,7 @@ public class Server {
                         return false;   // inform calling thread to wait for another login
                     } else {    // client reconnected
                         System.out.println(login + " reconnected");
+                        Server.updateGameState();
                         if (clientIndex != lastLoginIndex) {
                             logins[lastLoginIndex] = logins[clientIndex];
                             logins[clientIndex] = login;
@@ -249,6 +250,7 @@ public class Server {
                         return false;   // inform calling thread to wait for another login
                     } else {    // client reconnected
                         System.out.println(login + " reconnected");
+                        Server.updateGameState();
                         if (clientIndex != lastLoginIndex) {
                             logins[lastLoginIndex] = logins[clientIndex];
                             logins[clientIndex] = login;
